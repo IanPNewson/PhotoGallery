@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Tulpep.NotificationWindow;
@@ -38,8 +39,9 @@ namespace PhotoGallery
             }
         }
 
-        public Form1()
+        public Form1(DirectoryInfo dir)
         {
+            _Dir = dir;
             InitializeComponent();
         }
 
@@ -60,9 +62,36 @@ namespace PhotoGallery
             switch (e.KeyCode)
             {
                 case Keys.Delete:
+                case Keys.D:
                     this.SetImage(nextFile);
                     CurrentFile = nextFile;
-                    Toast($"Deleted {currentFile.Name}");
+
+                    Task.Run(() =>
+                    {
+                        var i = 0;
+                        while (i < 10 && currentFile.Exists)
+                        {
+                            try
+                            {
+                                currentFile.Delete();
+                                currentFile.Refresh();
+                                Invoke(new Action(() =>
+                                {
+                                    if(!currentFile.Exists)
+                                        Toast($"Deleted {currentFile.Name}");
+                                }));
+                            }
+                            catch (Exception ex)
+                            {
+                                Invoke(new Action(() =>
+                                {
+                                    Toast($" Couldn't delete {currentFile.Name}", $"Attempts: {i}: {ex.Message}");
+                                }));
+                                Thread.Sleep(10_000);
+                            }
+                            ++i;
+                        }
+                    });
                     break;
                 case Keys.Right:
                     this.SetImage(nextFile);
@@ -77,14 +106,22 @@ namespace PhotoGallery
 
         private void SetImage(FileInfo file)
         {
-            this.pictureBox1.Image = Image.FromFile(file.FullName);
-            this.Text = file.Name;
+            Image imgClone;
+            using (var img = Image.FromFile(file.FullName))
+            {
+                imgClone = new Bitmap(img);
+            }
+            this.pictureBox1.Image = imgClone;
+            var count = ImageFiles.Count();
+            var index = ImageFiles.TakeWhile(f => f.Name.CompareTo(file.Name) <= 0).Count();
+            this.Text = file.Name + $" ({index}/{count})";
         }
 
-        private void Toast(string msg)
+        private void Toast(string msg, string body = null)
         {
             var popupNotifier = new PopupNotifier();
             popupNotifier.TitleText = msg;
+            popupNotifier.ContentText = body;
             popupNotifier.Popup();
         }
 
