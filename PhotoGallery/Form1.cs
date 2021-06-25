@@ -114,7 +114,7 @@ namespace PhotoGallery
             this.pictureBox1.Image = imgClone;
             var count = ImageFiles.Count();
             var index = ImageFiles.TakeWhile(f => f.Name.CompareTo(file.Name) <= 0).Count();
-            this.Text = file.Name + $" ({index}/{count})";
+            this.Text = file.Name + $" ({index}/{count}) ({_Dir.Name})";
         }
 
         private void Toast(string msg, string body = null)
