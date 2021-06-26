@@ -1,4 +1,5 @@
-﻿using System;
+﻿using INHelpers;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -68,6 +69,7 @@ namespace PhotoGallery
 
                     Task.Run(() =>
                     {
+                        //Retry delete in case it's locked
                         var i = 0;
                         while (i < 10 && currentFile.Exists)
                         {
